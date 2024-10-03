@@ -8,13 +8,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Report implements Runnable {
 
-    Map<String, Integer> stock ;
+    Map<String, Product> stock ;
     ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor();
 
+    AtomicInteger totalVendido;
+    BlockingQueue<Order> ordersCompletedQueue;
+    BlockingQueue<Order> ordersPendingQueue;
 
-
-    public Report(Map<String, Integer> stock){
+    public Report(Map<String, Product> stock, AtomicInteger totalVendido, BlockingQueue<Order> ordersCompletedQueue,  BlockingQueue<Order> ordersPendingQueue){
         this.stock = stock;
+        this.ordersCompletedQueue = ordersCompletedQueue;
+        this.ordersPendingQueue = ordersPendingQueue;
+        this.totalVendido = totalVendido;
     }
 
     @Override
@@ -22,18 +27,18 @@ public class Report implements Runnable {
         this.es.scheduleAtFixedRate(() -> {
             try {
                 String dataHora = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date());
-
-                System.out.println("-------------------------------------------");
-                System.out.println("Situação do Estoque - " + dataHora);
-                System.out.println("-------------------------------------------");
-
-                for (Map.Entry<String, Integer> entry : stock.entrySet()) {
-                    System.out.println(entry.getKey() + " : " + entry.getValue());
-                }
-                System.out.println("-------------------------------------------");
+                String saida = "";
+                saida += "-------------------------------------------\n";
+                saida += "Relatorio de vendas - "+ dataHora +"\n";
+                saida +="-------------------------------------------\n";
+                saida += "Pedidos processados: " + ordersCompletedQueue.size() + "\n";
+                saida += "Total vendido: " + totalVendido.get() + "\n";
+                saida += "Pedidos Rejeitados: " + ordersPendingQueue.size() + "\n";
+                saida += "-------------------------------------------";
+                System.out.println(saida);
             } catch (Exception e) {
-                System.out.println("Erro no orderProducer");
+
             }
-        }, 0,60, TimeUnit.SECONDS);
+        }, 30,30, TimeUnit.SECONDS);
     }
 }

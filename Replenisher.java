@@ -10,15 +10,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Replenisher implements Runnable {
 
-    Map<String, Integer> stock ;
+    Map<String, Product> stock ;
     List<String> products;
     ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor();
+    BlockingQueue<Order> ordersPending;
+    BlockingQueue<Order> orders;
 
 
-    public Replenisher(Map<String, Integer> stock){
+    public Replenisher(Map<String, Product> stock,BlockingQueue<Order> ordersQueue, BlockingQueue<Order> ordersPending){
         this.stock = stock;
         this.products = new ArrayList<String>();
         initializeProducts();
+        this.ordersPending = ordersPending;
+        this.orders = ordersQueue;
     }
 
     @Override
@@ -26,12 +30,22 @@ public class Replenisher implements Runnable {
         this.es.scheduleAtFixedRate(() -> {
             try {
                 String product = this.products.get(new Random().nextInt(10));
-                int quant = new Random().nextInt(50);
-                this.stock.put(product,quant);
+                Product productInStock = stock.get(product);
+                productInStock.setQuant( new Random().nextInt(50));
+                returnOrderToList(product);
             } catch (Exception e) {
-                System.out.println("Erro no orderProducer");
+
             }
         }, 0,10, TimeUnit.SECONDS);
+    }
+
+    private void  returnOrderToList(String product) {
+        for (Order order : this.ordersPending) {
+            if (order.products.keySet().stream().anyMatch(value -> value.contains(product))) {
+                System.out.println("O produto " + order.id + " voltou pra fila" );
+                this.orders.add(order);
+            }
+        }
     }
 
 

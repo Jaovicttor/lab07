@@ -13,25 +13,27 @@ public class OrderProducer implements Runnable {
 
     int period;
     List<String> products;
+    AtomicInteger totalVendido;
 
 
 
-    public OrderProducer(BlockingQueue<Order> bq, AtomicInteger index, int period){
+    public OrderProducer(BlockingQueue<Order> bq, AtomicInteger index, int period, AtomicInteger totalVendido){
         this.bq = bq;
         this.index = index;
         this.period = period;
         this.products = new ArrayList<String>();
         initializeProducts();
+        this.totalVendido = totalVendido;
     }
 
     @Override
     public void run() {
         this.es.scheduleAtFixedRate(() -> {
-            Order order = new Order(index.getAndIncrement(), generateListProducts() );
+            Order order = new Order(index.getAndIncrement(), generateListProducts(), totalVendido );
             try {
                 this.bq.put(order);
             } catch (Exception e) {
-                System.out.println("Erro no orderProducer");
+
             }
         }, 0, this.period, TimeUnit.SECONDS);
     }
